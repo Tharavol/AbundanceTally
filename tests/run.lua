@@ -137,6 +137,11 @@ do
     I.ShouldRecord(lastSeen, "poi", I.Fingerprint({ name = "A", pois = { { secondsLeft = 100 } } }, ignore))
     check("an ignored key's churn is not a change",
         not I.ShouldRecord(lastSeen, "poi", I.Fingerprint({ name = "A", pois = { { secondsLeft = 99 } } }, ignore)))
+
+    check("a record inside the interval is throttled", I.WithinInterval(100, 104.9, 5))
+    check("a record at the interval is not", not I.WithinInterval(100, 105, 5))
+    check("no earlier record never throttles", not I.WithinInterval(nil, 100, 5))
+    check("a marker clock never throttles", not I.WithinInterval(100, "<missing>", 5))
 end
 
 --------------------------------------------------------------------------
@@ -416,6 +421,38 @@ do
         widgetType = Enum.UIWidgetVisualizationType.StatusBar })
     assertEqual("a widget update inside a run is logged", lastEntry().kind, "widget")
     assertEqual("...with its scalar fields", lastEntry().data.fields.barValue, 2000)
+
+    -- The shared altar meter (7316) is recorded at most once per interval.
+    local ALTAR = 7316
+    local interval = I.THROTTLED_WIDGETS[ALTAR]
+    check("the shared altar widget is throttled", type(interval) == "number" and interval > 0)
+    local function altarUpdate(value)
+        fixtures.setWidgets(1, { { widgetID = ALTAR, widgetType = Enum.UIWidgetVisualizationType.StatusBar,
+            info = { barValue = value, barMax = 10000, text = "Public Altar Contribution" } } })
+        I.OnEvent(nil, "UPDATE_UI_WIDGET", { widgetID = ALTAR, widgetSetID = 1,
+            widgetType = Enum.UIWidgetVisualizationType.StatusBar })
+    end
+    before = #entries()
+    altarUpdate(100)
+    altarUpdate(200)
+    fixtures.advanceClock(interval / 2)
+    altarUpdate(300)
+    assertEqual("altar changes inside the interval log once", #entries(), before + 1)
+    fixtures.advanceClock(interval / 2)
+    altarUpdate(400)
+    assertEqual("the first change after the interval logs", #entries(), before + 2)
+    assertEqual("...with the value reached by then", lastEntry().data.fields.barValue, 400)
+    fixtures.advanceClock(interval)
+    altarUpdate(400)
+    assertEqual("an unchanged altar value still logs nothing", #entries(), before + 2)
+    altarUpdate(500)
+    assertEqual("...and a real change after it does", #entries(), before + 3)
+    altarUpdate(600)
+    fixtures.setWidgets(1, { { widgetID = 555, widgetType = Enum.UIWidgetVisualizationType.StatusBar,
+        info = { barValue = 2100, barMax = 3000, text = "Score" } } })
+    I.OnEvent(nil, "UPDATE_UI_WIDGET", { widgetID = 555, widgetSetID = 1,
+        widgetType = Enum.UIWidgetVisualizationType.StatusBar })
+    assertEqual("other widgets are not throttled", #entries(), before + 4)
 
     -- A handler bug is logged, never thrown.
     local savedGetInfo = C_QuestLog.GetNumQuestLogEntries

@@ -47,5 +47,6 @@ The log is in `<WoW folder>\_retail_\WTF\Account\<ACCOUNT>\SavedVariables\Abunda
 ## Notes
 
 - Only entries whose value changed since the last entry of the same kind are recorded, so a long session stays readable. Snapshots record everything regardless.
+- Widget 7316 ("Public Altar Contribution") is a shared meter that every player in the cave moves. Its changes are recorded at most once every 5 seconds; in the first session it filled the log on its own.
 - Values the client marks as secret are stored as the string `"<secret>"`, and an API call that fails is stored as `"<err: ...>"`, so a missing or restricted API shows up in the log instead of breaking the recording.
 - The log has a fixed size cap; once full, the oldest entries are dropped. `/tally probe status` shows the current count.

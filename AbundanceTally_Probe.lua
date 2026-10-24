@@ -31,6 +31,12 @@ I.WEEKLY_GOAL = 20000
 -- weekly frequency alone would happily nominate any unrelated weekly.
 I.MIN_BEST_SCORE = 10
 
+-- [widgetID] = minimum seconds between recorded changes. 7316, "Public Altar
+-- Contribution", is a shared meter every player in the cave moves: it changes
+-- about ten times a second and alone filled the capped log in the first probe
+-- session. Snapshots still record it in full.
+I.THROTTLED_WIDGETS = { [7316] = 5 }
+
 I.TITLE_NEEDLES = { "abund", "offering" }
 I.AURA_NEEDLES = { "abund", "dundun", "blessing" }
 I.CHAT_NEEDLES = { "dundun", "abund" }
@@ -46,6 +52,7 @@ local state = {
     caveNames = {}, -- "Enchanting Crypt" from "Abundance: Enchanting Crypt"
     contextTexts = {}, -- zone/subzone/instance/scenario names last read
     seenWidgetSets = {}, -- widget sets UPDATE_UI_WIDGET reported while in an Abundance context
+    widgetRecordedAt = {}, -- [widgetID] = GetTime() of the last recorded change, for I.THROTTLED_WIDGETS
 }
 I.state = state
 
@@ -215,6 +222,16 @@ function I.ShouldRecord(lastSeen, key, fingerprint)
     end
     lastSeen[key] = fingerprint
     return true
+end
+
+-- True when a record at `now` would come less than `interval` seconds after
+-- the one at `last`. A missing or non-numeric time never throttles, so a
+-- clock that reads as a marker cannot silence a widget for good.
+function I.WithinInterval(last, now, interval)
+    if type(last) ~= "number" or type(now) ~= "number" or type(interval) ~= "number" then
+        return false
+    end
+    return now - last < interval
 end
 
 -- Appends to a plain list and drops the oldest entries beyond `cap`, in one
@@ -911,12 +928,31 @@ local function RememberWidgets(sets)
     end
 end
 
+-- RecordIfChanged for one widget, honouring I.THROTTLED_WIDGETS. A throttled
+-- change leaves the fingerprint alone, so the first read after the interval
+-- records whatever value the widget has reached by then.
+local function RecordWidgetIfChanged(event, widget)
+    local widgetID = widget.widgetID
+    local interval = I.THROTTLED_WIDGETS[widgetID]
+    local now = interval and I.Read(GetTime)
+    if interval and I.WithinInterval(state.widgetRecordedAt[widgetID], now, interval) then
+        return false
+    end
+    if RecordIfChanged("widget", widgetID, event, widget) then
+        if interval then
+            state.widgetRecordedAt[widgetID] = now
+        end
+        return true
+    end
+    return false
+end
+
 local function RecordWidgets(event)
     for _, set in ipairs(ReadAllWidgets()) do
         if type(set.widgets) == "table" then
             for _, widget in ipairs(set.widgets) do
                 widget.setID = set.setID
-                RecordIfChanged("widget", widget.widgetID, event, widget)
+                RecordWidgetIfChanged(event, widget)
             end
         end
     end
@@ -1128,7 +1164,7 @@ local function OnWidget(event, widgetInfo)
     end
     local widget = ReadWidget(widgetInfo.widgetID, widgetInfo.widgetType)
     widget.setID = widgetInfo.widgetSetID
-    RecordIfChanged("widget", widget.widgetID, event, widget)
+    RecordWidgetIfChanged(event, widget)
 end
 
 local function IsPlayer(unit)
@@ -1326,6 +1362,7 @@ local SUBCOMMANDS = {
             db.entries = {}
             db.dropped = 0
             state.lastSeen = {}
+            state.widgetRecordedAt = {}
             ns.Print("probe log cleared.")
         end,
     },
