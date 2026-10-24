@@ -1,0 +1,14 @@
+## Interface: 120105
+## Title: AbundanceTally
+## Notes: Shows progress toward the weekly Abundance quest while an Abundance event run is in progress.
+## Author: Tharavol
+## Version: @project-version@
+## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## Category: Quests
+## SavedVariables: AbundanceTallyDB
+
+## X-ReleaseNotes: Pre-release probe build. Adds /tally probe, which records the weekly Abundance quest's objective, the Abundance run auras and their tooltip text, UI widgets, combat transitions, zone and event context, Shard of Dundun and Unalloyed Abundance, and Dundun's chat lines into the SavedVariables file, so the real progress display can be built against confirmed game data. /tally probe start begins recording (it resumes after a reload), /tally probe snap takes a one-off snapshot and prints a summary, /tally probe stop ends recording, and /tally help lists every command. The log is written to disk on /reload or logout. Source, issues and release notes: https://github.com/Tharavol/AbundanceTally
+
+AbundanceTally_Config.lua
+AbundanceTally_Probe.lua
+AbundanceTally_Commands.lua

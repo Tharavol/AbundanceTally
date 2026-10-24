@@ -1,0 +1,14 @@
+package-as: AbundanceTally
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+# docs/ holds only developer-facing material (HANDOFF.md, PROBE.md), not
+# anything end users need, so it stays out of the release archive.
+ignore:
+  - .github
+  - .luacheckrc
+  - tests
+  - CHANGELOG.md
+  - docs

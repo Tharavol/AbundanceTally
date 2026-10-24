@@ -1,0 +1,51 @@
+name: Pre-release
+
+on:
+  push:
+    tags:
+      # alpha/beta only: packager itself reads "alpha"/"beta" out of the tag
+      # name to decide the GitHub release's prerelease flag (and, later, the
+      # CurseForge release channel), so tags need one of those words in them
+      # to get that treatment. Anything else (e.g. -rc.1) would still build
+      # and publish here, just without that automatic classification.
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha*'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # No CF_API_KEY / WOWI_API_TOKEN / WAGO_API_TOKEN here, deliberately --
+      # this channel only ever attaches a build to a GitHub release. If
+      # release.yml gains CurseForge (or WoWI/Wago) publishing later, this
+      # job still won't touch those, since packager only uploads to a
+      # destination when its token env var is present.
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
+        env:
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify archive layout
+        run: |
+          zip=$(ls .release/*.zip)
+          unzip -l "$zip"
+          unzip -l "$zip" | grep -q 'AbundanceTally/AbundanceTally.toc'
+          unzip -l "$zip" | grep -q 'AbundanceTally/AbundanceTally_Config.lua'
+          unzip -l "$zip" | grep -q 'AbundanceTally/AbundanceTally_Probe.lua'
+          unzip -l "$zip" | grep -q 'AbundanceTally/AbundanceTally_Commands.lua'
+
+          if unzip -l "$zip" | grep -q 'AbundanceTally/tests/'; then
+            echo "tests/ should not ship in the release archive (see .pkgmeta)" >&2
+            exit 1
+          fi
+          if unzip -l "$zip" | grep -q 'AbundanceTally/CHANGELOG.md'; then
+            echo "CHANGELOG.md should not ship in the release archive (see .pkgmeta)" >&2
+            exit 1
+          fi
