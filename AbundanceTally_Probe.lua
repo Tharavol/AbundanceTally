@@ -53,6 +53,7 @@ local state = {
     contextTexts = {}, -- zone/subzone/instance/scenario names last read
     seenWidgetSets = {}, -- widget sets UPDATE_UI_WIDGET reported while in an Abundance context
     widgetRecordedAt = {}, -- [widgetID] = GetTime() of the last recorded change, for I.THROTTLED_WIDGETS
+    widgetRise = {}, -- [widgetID] = { last, total } running rise of a throttled bar, see I.AccumulateRise
 }
 I.state = state
 
@@ -232,6 +233,30 @@ function I.WithinInterval(last, now, interval)
         return false
     end
     return now - last < interval
+end
+
+-- Adds the rise from the tracker's last bar value to `value` and returns the
+-- running total. A drop is the bar filling and resetting, so it counts the
+-- rest of the way to the top (or to the last value, when it overshot `max`)
+-- plus `value`. A non-numeric value forgets the baseline instead, so a bar
+-- that vanishes between runs does not credit what moved while it was gone.
+function I.AccumulateRise(tracker, value, max)
+    tracker.total = tracker.total or 0
+    if type(value) ~= "number" then
+        tracker.last = nil
+        return tracker.total
+    end
+    local last = tracker.last
+    if type(last) == "number" then
+        if value >= last then
+            tracker.total = tracker.total + value - last
+        else
+            local top = type(max) == "number" and math.max(max, last) or last
+            tracker.total = tracker.total + top - last + value
+        end
+    end
+    tracker.last = value
+    return tracker.total
 end
 
 -- Appends to a plain list and drops the oldest entries beyond `cap`, in one
@@ -930,10 +955,17 @@ end
 
 -- RecordIfChanged for one widget, honouring I.THROTTLED_WIDGETS. A throttled
 -- change leaves the fingerprint alone, so the first read after the interval
--- records whatever value the widget has reached by then.
+-- records whatever value the widget has reached by then. Every read of a
+-- throttled widget still feeds its running rise, stored on the widget as
+-- `rise`, so fills and resets between two recorded entries are not lost.
 local function RecordWidgetIfChanged(event, widget)
     local widgetID = widget.widgetID
     local interval = I.THROTTLED_WIDGETS[widgetID]
+    if interval then
+        local fields = type(widget.fields) == "table" and widget.fields or {}
+        state.widgetRise[widgetID] = state.widgetRise[widgetID] or {}
+        widget.rise = I.AccumulateRise(state.widgetRise[widgetID], fields.barValue, fields.barMax)
+    end
     local now = interval and I.Read(GetTime)
     if interval and I.WithinInterval(state.widgetRecordedAt[widgetID], now, interval) then
         return false
@@ -1363,6 +1395,7 @@ local SUBCOMMANDS = {
             db.dropped = 0
             state.lastSeen = {}
             state.widgetRecordedAt = {}
+            state.widgetRise = {}
             ns.Print("probe log cleared.")
         end,
     },

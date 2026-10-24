@@ -14,3 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - The probe records widget 7316 ("Public Altar Contribution", a shared meter that changes about ten times a second) at most once every 5 seconds, so it no longer pushes the start of a run out of the capped log. Snapshots still record it in full.
+- Each recorded 7316 entry carries `rise`, the meter's running rise since the probe started (or was cleared or reloaded), counting every fill and reset. The probe reads every update even while throttled, so a fill between two entries is not lost.

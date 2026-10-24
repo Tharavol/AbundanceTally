@@ -142,6 +142,16 @@ do
     check("a record at the interval is not", not I.WithinInterval(100, 105, 5))
     check("no earlier record never throttles", not I.WithinInterval(nil, 100, 5))
     check("a marker clock never throttles", not I.WithinInterval(100, "<missing>", 5))
+
+    local tracker = {}
+    assertEqual("the first value only sets the baseline", I.AccumulateRise(tracker, 6490, 10000), 0)
+    assertEqual("a rise adds the difference", I.AccumulateRise(tracker, 9710, 10000), 3220)
+    assertEqual("a reset counts the rest of the bar plus the new value", I.AccumulateRise(tracker, 190, 10000), 3700)
+    assertEqual("an unchanged value adds nothing", I.AccumulateRise(tracker, 190, 10000), 3700)
+    I.AccumulateRise(tracker, 10010, 10000)
+    assertEqual("a reset after overshooting the max adds no negative rest", I.AccumulateRise(tracker, 0, 10000), 13520)
+    assertEqual("a missing value keeps the total", I.AccumulateRise(tracker, nil, 10000), 13520)
+    assertEqual("...and the next value starts a new baseline", I.AccumulateRise(tracker, 5000, 10000), 13520)
 end
 
 --------------------------------------------------------------------------
@@ -448,6 +458,14 @@ do
     altarUpdate(500)
     assertEqual("...and a real change after it does", #entries(), before + 3)
     altarUpdate(600)
+    -- A fill and reset inside the throttle interval still reaches the total.
+    altarUpdate(9900)
+    altarUpdate(50)
+    fixtures.advanceClock(interval)
+    altarUpdate(150)
+    assertEqual("the entry after a throttled reset carries the full rise",
+        lastEntry().data.rise, (400 - 100) + (500 - 400) + (10000 - 500) + 150)
+    before = before + 1
     fixtures.setWidgets(1, { { widgetID = 555, widgetType = Enum.UIWidgetVisualizationType.StatusBar,
         info = { barValue = 2100, barMax = 3000, text = "Score" } } })
     I.OnEvent(nil, "UPDATE_UI_WIDGET", { widgetID = 555, widgetSetID = 1,
