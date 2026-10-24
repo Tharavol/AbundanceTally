@@ -43,7 +43,7 @@ None of the following has been confirmed in-game by this addon yet; confirming i
 
 ## Next steps
 
-- Run the probe session in docs/PROBE.md and record the answers on #3 through #7. v0.3.0's readers (#12, #13, #14) depend on them.
+- Run the probe session in docs/PROBE.md and record the answers on #3 through #7. v0.3.0's readers (#12, #13, #14) depend on them. PROBE.md covers setup from a fresh clone on any PC (install, client restart, load check), the session itself, and where the log lands. As of the initial commit, the probe build has passed CI and been deployed, but it has not yet run in-game.
 
 ## Local setup checklist
 
