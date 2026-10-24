@@ -47,6 +47,6 @@ The log is in `<WoW folder>\_retail_\WTF\Account\<ACCOUNT>\SavedVariables\Abunda
 ## Notes
 
 - Only entries whose value changed since the last entry of the same kind are recorded, so a long session stays readable. Snapshots record everything regardless.
-- Widget 7316 ("Public Altar Contribution") is a shared meter that every player in the cave moves. Its changes are recorded at most once every 5 seconds; in the first session it filled the log on its own. Each of its entries carries `rise`, the running total of everything the meter rose by (across fills and resets), so the difference in `rise` between two entries is how much the cave contributed in between.
+- The "Public Altar Contribution" widget is a shared meter that every player in the cave moves. Each cave has its own widget ID for it (7316 in Enchanting Crypt, 7317 in Herbalism Grotto), so the probe matches it by its text. Its changes are recorded at most once every 5 seconds; in the first session it filled the log on its own. Each of its entries carries `rise`, the running total of everything the meter rose by (across fills and resets), so the difference in `rise` between two entries is how much the cave contributed in between.
 - Values the client marks as secret are stored as the string `"<secret>"`, and an API call that fails is stored as `"<err: ...>"`, so a missing or restricted API shows up in the log instead of breaking the recording.
 - The log has a fixed size cap; once full, the oldest entries are dropped. `/tally probe status` shows the current count.

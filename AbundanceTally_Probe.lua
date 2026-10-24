@@ -31,11 +31,16 @@ I.WEEKLY_GOAL = 20000
 -- weekly frequency alone would happily nominate any unrelated weekly.
 I.MIN_BEST_SCORE = 10
 
--- [widgetID] = minimum seconds between recorded changes. 7316, "Public Altar
--- Contribution", is a shared meter every player in the cave moves: it changes
--- about ten times a second and alone filled the capped log in the first probe
--- session. Snapshots still record it in full.
-I.THROTTLED_WIDGETS = { [7316] = 5 }
+-- "Public Altar Contribution" is a shared meter every player in the cave
+-- moves: it changes about ten times a second and alone filled the capped log
+-- in the first probe session. Each cave has its own widget ID for it (7316 in
+-- Enchanting Crypt, 7317 in Herbalism Grotto), so it is matched by text, with
+-- the known IDs as a fallback for a read whose text is empty or secret. Its
+-- changes are recorded at most once per I.ALTAR_THROTTLE_SECONDS; snapshots
+-- still record it in full.
+I.ALTAR_TEXT = "Public Altar Contribution"
+I.ALTAR_WIDGET_IDS = { [7316] = true, [7317] = true }
+I.ALTAR_THROTTLE_SECONDS = 5
 
 I.TITLE_NEEDLES = { "abund", "offering" }
 I.AURA_NEEDLES = { "abund", "dundun", "blessing" }
@@ -52,7 +57,7 @@ local state = {
     caveNames = {}, -- "Enchanting Crypt" from "Abundance: Enchanting Crypt"
     contextTexts = {}, -- zone/subzone/instance/scenario names last read
     seenWidgetSets = {}, -- widget sets UPDATE_UI_WIDGET reported while in an Abundance context
-    widgetRecordedAt = {}, -- [widgetID] = GetTime() of the last recorded change, for I.THROTTLED_WIDGETS
+    widgetRecordedAt = {}, -- [widgetID] = GetTime() of the last recorded change of an altar widget
     widgetRise = {}, -- [widgetID] = { last, total } running rise of a throttled bar, see I.AccumulateRise
 }
 I.state = state
@@ -233,6 +238,18 @@ function I.WithinInterval(last, now, interval)
         return false
     end
     return now - last < interval
+end
+
+-- True for a "Public Altar Contribution" widget, by its text or a known ID.
+function I.IsAltarWidget(widget)
+    if type(widget) ~= "table" then
+        return false
+    end
+    local fields = widget.fields
+    if type(fields) == "table" and fields.text == I.ALTAR_TEXT then
+        return true
+    end
+    return I.ALTAR_WIDGET_IDS[widget.widgetID] == true
 end
 
 -- Adds the rise from the tracker's last bar value to `value` and returns the
@@ -953,14 +970,14 @@ local function RememberWidgets(sets)
     end
 end
 
--- RecordIfChanged for one widget, honouring I.THROTTLED_WIDGETS. A throttled
--- change leaves the fingerprint alone, so the first read after the interval
--- records whatever value the widget has reached by then. Every read of a
--- throttled widget still feeds its running rise, stored on the widget as
--- `rise`, so fills and resets between two recorded entries are not lost.
+-- RecordIfChanged for one widget, throttling altar widgets (I.IsAltarWidget).
+-- A throttled change leaves the fingerprint alone, so the first read after
+-- the interval records whatever value the widget has reached by then. Every
+-- read of an altar widget still feeds its running rise, stored on the widget
+-- as `rise`, so fills and resets between two recorded entries are not lost.
 local function RecordWidgetIfChanged(event, widget)
     local widgetID = widget.widgetID
-    local interval = I.THROTTLED_WIDGETS[widgetID]
+    local interval = I.IsAltarWidget(widget) and I.ALTAR_THROTTLE_SECONDS or nil
     if interval then
         local fields = type(widget.fields) == "table" and widget.fields or {}
         state.widgetRise[widgetID] = state.widgetRise[widgetID] or {}

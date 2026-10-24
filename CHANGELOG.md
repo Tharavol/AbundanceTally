@@ -13,5 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/tally version` and `/tally help`; `/abundancetally` is registered as a fallback alias.
 
 ### Changed
-- The probe records widget 7316 ("Public Altar Contribution", a shared meter that changes about ten times a second) at most once every 5 seconds, so it no longer pushes the start of a run out of the capped log. Snapshots still record it in full.
-- Each recorded 7316 entry carries `rise`, the meter's running rise since the probe started (or was cleared or reloaded), counting every fill and reset. The probe reads every update even while throttled, so a fill between two entries is not lost.
+- The probe records the "Public Altar Contribution" widget (a shared meter that changes about ten times a second) at most once every 5 seconds, so it no longer pushes the start of a run out of the capped log. Snapshots still record it in full.
+- Each recorded altar entry carries `rise`, the meter's running rise since the probe started (or was cleared or reloaded), counting every fill and reset. The probe reads every update even while throttled, so a fill between two entries is not lost.
+- The altar widget is matched by its text, since each cave uses its own widget ID (7316 in Enchanting Crypt, 7317 in Herbalism Grotto); those two IDs are kept as a fallback for reads whose text is empty or secret.

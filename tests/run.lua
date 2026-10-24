@@ -143,6 +143,16 @@ do
     check("no earlier record never throttles", not I.WithinInterval(nil, 100, 5))
     check("a marker clock never throttles", not I.WithinInterval(100, "<missing>", 5))
 
+    check("an altar is matched by its text",
+        I.IsAltarWidget({ widgetID = 9001, fields = { text = "Public Altar Contribution" } }))
+    check("a known altar ID matches with its text secret",
+        I.IsAltarWidget({ widgetID = 7317, fields = { text = SECRET } }))
+    check("a known altar ID matches with no fields",
+        I.IsAltarWidget({ widgetID = 7316, fields = false }))
+    check("another widget is not an altar",
+        not I.IsAltarWidget({ widgetID = 6849, fields = { text = "Abundance Bag" } }))
+    check("a non-table is not an altar", not I.IsAltarWidget(nil))
+
     local tracker = {}
     assertEqual("the first value only sets the baseline", I.AccumulateRise(tracker, 6490, 10000), 0)
     assertEqual("a rise adds the difference", I.AccumulateRise(tracker, 9710, 10000), 3220)
@@ -434,12 +444,13 @@ do
 
     -- The shared altar meter (7316) is recorded at most once per interval.
     local ALTAR = 7316
-    local interval = I.THROTTLED_WIDGETS[ALTAR]
+    local interval = I.ALTAR_THROTTLE_SECONDS
     check("the shared altar widget is throttled", type(interval) == "number" and interval > 0)
-    local function altarUpdate(value)
-        fixtures.setWidgets(1, { { widgetID = ALTAR, widgetType = Enum.UIWidgetVisualizationType.StatusBar,
+    local function altarUpdate(value, widgetID)
+        widgetID = widgetID or ALTAR
+        fixtures.setWidgets(1, { { widgetID = widgetID, widgetType = Enum.UIWidgetVisualizationType.StatusBar,
             info = { barValue = value, barMax = 10000, text = "Public Altar Contribution" } } })
-        I.OnEvent(nil, "UPDATE_UI_WIDGET", { widgetID = ALTAR, widgetSetID = 1,
+        I.OnEvent(nil, "UPDATE_UI_WIDGET", { widgetID = widgetID, widgetSetID = 1,
             widgetType = Enum.UIWidgetVisualizationType.StatusBar })
     end
     before = #entries()
@@ -471,6 +482,18 @@ do
     I.OnEvent(nil, "UPDATE_UI_WIDGET", { widgetID = 555, widgetSetID = 1,
         widgetType = Enum.UIWidgetVisualizationType.StatusBar })
     assertEqual("other widgets are not throttled", #entries(), before + 4)
+
+    -- Another cave's altar, under an ID the probe has never seen, is matched
+    -- by its text: throttled, with a rise total of its own.
+    local OTHER_ALTAR = 9001
+    before = #entries()
+    altarUpdate(2110, OTHER_ALTAR)
+    altarUpdate(2210, OTHER_ALTAR)
+    altarUpdate(2310, OTHER_ALTAR)
+    assertEqual("an altar under an unknown ID is throttled too", #entries(), before + 1)
+    fixtures.advanceClock(interval)
+    altarUpdate(2410, OTHER_ALTAR)
+    assertEqual("...and keeps its own rise total", lastEntry().data.rise, 300)
 
     -- A handler bug is logged, never thrown.
     local savedGetInfo = C_QuestLog.GetNumQuestLogEntries
