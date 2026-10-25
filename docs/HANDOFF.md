@@ -24,10 +24,18 @@ Load order is enforced by the TOC list, not by Lua. Commands.lua calls into `ns.
 
 ## What is known, and from where
 
-None of the following has been confirmed in-game by this addon yet; confirming it is the point of v0.1.0.
+Confirmed in-game by the probe (details and per-run numbers in docs/PROBE.md and on #3 to #7):
+
+- The weekly is quest 89507 "Abundant Offerings", one objective out of 20,000. Its `numFulfilled` changes only once per run, when the run timer ends, so live weekly progress during a run is not available from the quest.
+- Aura reads fail in combat (secret values); UI widgets stay readable. Widget 6849 "Abundance Bag" carries orbs held; no widget carries the weekly score.
+- A completed run adds at least 2,500 to the weekly. The rest depends on the player's own orbs (held and deposited), not on the reward tier or on other players' altar contributions. The exact formula is #5, still open.
+
+This affects later milestones: v0.3.0's readers (#12, #13, #14) and the v0.4.0 in-run display were planned around a live weekly score, which does not exist. They need rescoping (for example, an estimate from orbs held and deposited) once #5 settles the formula.
+
+From outside sources, not yet all confirmed by the probe:
 
 - Runs last 3 minutes. Orbs come from Abundance mobs and gathering and are deposited at a shrine of Dundun. The active cave rotates every 8 hours across Eversong Woods, Zul'Aman, Harandar and Voidstorm. (Method, Icy Veins, warcraft.wiki.gg.)
-- The weekly needs 20,000 points. Its name differs between sources: "Weekly: Abundance" (Icy Veins) and "Abundant Offerings" from Chel the Chip (warcraft.wiki.gg). No source gives its quest ID.
+- The weekly needs 20,000 points. Its name differs between sources: "Weekly: Abundance" (Icy Veins) and "Abundant Offerings" from Chel the Chip (warcraft.wiki.gg). The probe and Wowhead give quest 89507 "Abundant Offerings".
 - The per-run score is a player debuff, spell 1229266 / 1229501 / 1229681 by tier, whose tooltip reads `Current: X / Y`; thresholds 1,000 / 3,000 / 5,000 for 300 / 600 / 900 Unalloyed Abundance. (Abundance Helper's source.) That addon stops updating in combat, which is why combat readability is its own question (#6).
 - Shard of Dundun is currency 3376 (DundunTracker's source); Unalloyed Abundance is 3377 (warcraft.wiki.gg).
 - The active cave is an Area POI named `Abundance: <X>`, found with `C_AreaPoiInfo.GetEventsForMap` on maps 2395 / 2437 / 2413 / 2405 and timed with `GetAreaPOISecondsLeft`. (DundunTracker's source, MIT.)
@@ -43,7 +51,9 @@ None of the following has been confirmed in-game by this addon yet; confirming i
 
 ## Next steps
 
-- Run the probe session in docs/PROBE.md and record the answers on #3 through #7. v0.3.0's readers (#12, #13, #14) depend on them. PROBE.md covers setup from a fresh clone on any PC (install, client restart, load check), the session itself, and where the log lands. As of the initial commit, the probe build has passed CI and been deployed, but it has not yet run in-game.
+- #3, #4, #6 and #7 are answered and closed. #5 is open, waiting on a deposit-only run; the steps and what to read out of the log are under "Next run" in docs/PROBE.md.
+- To analyze a new run: read `AbundanceTallyDB.probe.entries` from the SavedVariables file (path in docs/PROBE.md) with a small Lua script that loads the file and prints the entries of interest (quest 89507 `numFulfilled`, widget 6849, the altar widget's `rise`, `combat` entries, currency 3377). Post results on #5 without the account folder name, character names or local paths.
+- Once #5 is closed: tag v0.1.0, close the v0.1.0 milestone explicitly, then rescope v0.3.0 and v0.4.0 as described above.
 
 ## Local setup checklist
 
