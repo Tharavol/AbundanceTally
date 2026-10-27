@@ -4,7 +4,7 @@ The v0.1.0 milestone exists to answer five questions from live game data before 
 
 ## Status
 
-Four of the five questions are answered and closed. #5 stays open, waiting on one more run (see "Next run" below). The full answers and per-run numbers are in each issue's comments.
+The project was abandoned on 2026-10-27 and the repository archived (see README.md). Four of the five questions were answered and closed. #5 was left open and unresolved: the deposit-only run under "Next run" below was never done. The full answers and per-run numbers are in each issue's comments.
 
 | Issue | Question | Status |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ What these show:
 
 ## Next run
 
-A deposit-only run separates the deposit term from the held-orb term:
+Not done; kept as a record of the planned experiment in case the work is picked up again. A deposit-only run separates the deposit term from the held-orb term:
 
 1. Use a character whose weekly is far enough from 20,000 that one run cannot complete it (the snapshot's quest entry for 89507 shows `numFulfilled`).
 2. `/tally probe clear`, then `/tally probe start`. Clear before every run; a run recorded on top of an old log is hard to separate out.

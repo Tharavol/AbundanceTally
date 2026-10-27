@@ -2,7 +2,7 @@
 
 ## Project summary
 
-AbundanceTally is a World of Warcraft addon for Retail / Midnight that will show progress toward the weekly Abundance quest (20,000 points from Abundance event runs) while a run is in progress, since the default UI gives no indication of it. As of v0.1.0 it contains only a data probe, `/tally probe`, which records the game data the display will be built on. The open questions the probe answers are listed in docs/PROBE.md.
+AbundanceTally is a World of Warcraft addon for Retail / Midnight that will show progress toward the weekly Abundance quest (20,000 points from Abundance event runs) while a run is in progress, since the default UI gives no indication of it. As of v0.1.0 it contains only a data probe, `/tally probe`, which records the game data the display would have been built on. The project is abandoned and the repository archived; see "Next steps". The open questions the probe answers are listed in docs/PROBE.md.
 
 ## Current state
 
@@ -50,6 +50,8 @@ From outside sources, not yet all confirmed by the probe:
 - Local deployment uses the sibling AddOnTools repo's `Update-AddOns.ps1 -Repo AbundanceTally`, which builds with the same packager the release workflow runs.
 
 ## Next steps
+
+The project was abandoned on 2026-10-27 and the repository archived. The probe showed that the weekly total cannot be read during a run and that the run's own score is unreadable in combat, so the planned in-run display could only be an estimate from an unconfirmed formula. That did not seem worth the remaining effort. Issues #5 and #8 to #27 and their milestones were left open as a record of the plan. If the work is picked up again, unarchive the repo and start from the following:
 
 - #3, #4, #6 and #7 are answered and closed. #5 is open, waiting on a deposit-only run; the steps and what to read out of the log are under "Next run" in docs/PROBE.md.
 - To analyze a new run: read `AbundanceTallyDB.probe.entries` from the SavedVariables file (path in docs/PROBE.md) with a small Lua script that loads the file and prints the entries of interest (quest 89507 `numFulfilled`, widget 6849, the altar widget's `rise`, `combat` entries, currency 3377). Post results on #5 without the account folder name, character names or local paths.

@@ -1,8 +1,18 @@
 # AbundanceTally
 
-AbundanceTally is a World of Warcraft addon for Retail / Midnight that shows progress toward the weekly Abundance quest while an Abundance event run is in progress. The weekly quest needs 20,000 points from Abundance runs, and the default UI gives no indication during a run of how close that total is.
+> **Abandoned.** This project is no longer developed and the repository is archived (read-only). The progress display was never built; only the v0.1.0 data probe exists.
+>
+> The probe found that the idea does not work well with the game's data:
+>
+> - The weekly quest (89507 "Abundant Offerings") updates only once, when a run ends, so there is no live weekly total to read during a run.
+> - The run-score aura cannot be read in combat (its values are secret), and no UI widget carries the score.
+> - A run's contribution to the weekly is not its final score. A completed run gives at least 2,500; the rest depends on the player's own orbs held and deposited, by a formula that was not pinned down.
+>
+> An in-run display could therefore only show an estimate, which did not seem worth the remaining effort. The findings and per-run numbers are in [docs/PROBE.md](docs/PROBE.md) and on issues #3 to #7.
 
-**Status: pre-release.** The current build (v0.1.0) contains only a data probe. The progress display is planned for later milestones and depends on what the probe confirms about the game's data; see [Roadmap](#roadmap).
+AbundanceTally was planned as a World of Warcraft addon for Retail / Midnight that shows progress toward the weekly Abundance quest while an Abundance event run is in progress. The weekly quest needs 20,000 points from Abundance runs, and the default UI gives no indication during a run of how close that total is.
+
+**Status: abandoned.** The only build (v0.1.0, untagged) contains only a data probe. The milestones under [Roadmap](#roadmap) were not pursued.
 
 ## Features
 
@@ -40,7 +50,7 @@ The probe log is written to `WTF/Account/<ACCOUNT>/SavedVariables/AbundanceTally
 
 ## Roadmap
 
-Each phase is a GitHub milestone, with its steps as issues:
+The plan as it stood when the project was abandoned. Each phase is a GitHub milestone, with its steps as issues; only v0.1.0 was worked on, and its issue #5 was left unresolved.
 
 - **v0.1.0 - In-game probe:** repository setup and the `/tally probe` command. It confirms the weekly quest's ID and objective format, whether the objective updates during a run, whether a run's score carries over 1:1, whether the data can be read in combat, and which UI widget holds the live score.
 - **v0.2.0 - Scaffold:** file split, SavedVariables schema, options panel shell, test coverage.
